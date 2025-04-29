@@ -229,7 +229,7 @@
 
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2.5rem;
   }
@@ -241,6 +241,12 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
 
   .stat-icon {

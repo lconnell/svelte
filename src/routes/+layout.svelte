@@ -3,6 +3,7 @@
   import '../app.css';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import { user } from '$lib/stores/auth';
+  import { sidebarOpen } from '$lib/stores/sidebar';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import Loader from '~icons/lucide/loader';
@@ -88,7 +89,7 @@
 {:else}
   <div class="app-layout">
     <Sidebar />
-    <main class="main-content">
+    <main class="main-content" class:sidebar-open={$sidebarOpen}>
       {@render children()}
     </main>
   </div>
@@ -124,12 +125,10 @@
   .main-content {
     flex: 1;
     padding: var(--spacing-lg);
-    margin-left: 0;
-    transition: margin-left 0.3s ease-in-out;
+    transition: padding-left 0.3s ease;
   }
 
-  /* Adjust main content when sidebar is open */
-  :global(.sidebar.open) + .main-content {
-    margin-left: 250px;
+  .main-content.sidebar-open {
+    padding-left: calc(250px + var(--spacing-lg));
   }
 </style> 

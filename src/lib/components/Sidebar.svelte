@@ -2,6 +2,7 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { user } from '$lib/stores/auth';
+  import { sidebarOpen } from '$lib/stores/sidebar';
   import { goto } from '$app/navigation';
   import Menu from '~icons/lucide/menu';
   import X from '~icons/lucide/x';
@@ -11,10 +12,8 @@
   import LogOut from '~icons/lucide/log-out';
   import User from '~icons/lucide/user';
 
-  let isOpen = $state(true);
-
   function toggleSidebar() {
-    isOpen = !isOpen;
+    $sidebarOpen = !$sidebarOpen;
   }
 
   function handleLogout() {
@@ -24,16 +23,9 @@
   }
 </script>
 
-<aside class="sidebar" class:open={isOpen}>
+<aside class="sidebar" class:open={$sidebarOpen}>
   <div class="sidebar-header">
     <h2>Admin Panel</h2>
-    <button class="toggle-button" onclick={toggleSidebar}>
-      {#if isOpen}
-        <X class="w-5 h-5" />
-      {:else}
-        <Menu class="w-5 h-5" />
-      {/if}
-    </button>
   </div>
 
   <nav class="sidebar-nav">
@@ -63,6 +55,14 @@
   </div>
 </aside>
 
+<button class="persistent-toggle" onclick={toggleSidebar}>
+  {#if $sidebarOpen}
+    <X class="w-5 h-5" />
+  {:else}
+    <Menu class="w-5 h-5" />
+  {/if}
+</button>
+
 <style>
   .sidebar {
     position: fixed;
@@ -87,6 +87,27 @@
     transform: translateX(-250px);
   }
 
+  .persistent-toggle {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    background: #1a1a1a;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    transition: background-color 0.2s;
+  }
+
+  .persistent-toggle:hover {
+    background-color: #2a2a2a;
+  }
+
   .sidebar-header {
     display: flex;
     justify-content: space-between;
@@ -98,17 +119,6 @@
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
-  }
-
-  .toggle-button {
-    background: none;
-    border: none;
-    color: #fff;
-    cursor: pointer;
-    padding: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   .sidebar-nav {
