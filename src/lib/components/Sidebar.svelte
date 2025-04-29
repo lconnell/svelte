@@ -12,22 +12,21 @@
   import LogOut from '~icons/lucide/log-out';
   import LogIn from '~icons/lucide/log-in';
 
-  let isOpen = $state(false);
+  let isOpen = $state(true);
 
   function toggleSidebar() {
     isOpen = !isOpen;
   }
 
   async function handleLogout() {
-    // Clear the user store
+    localStorage.removeItem('auth_token');
     user.set(null);
-    // Redirect to login page
     goto('/login');
   }
 </script>
 
 <nav class="sidebar" class:open={isOpen}>
-  <button class="toggle-button" onclick={toggleSidebar}>
+  <button class="toggle-button" on:click={toggleSidebar}>
     <Menu />
   </button>
 
@@ -64,7 +63,7 @@
           <User />
           <span>{$user.email}</span>
         </div>
-        <button class="logout-button" onclick={handleLogout}>
+        <button class="logout-button" on:click={handleLogout}>
           <LogOut />
           <span>Logout</span>
         </button>

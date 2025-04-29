@@ -21,19 +21,38 @@
     state.error = '';
 
     try {
-      const [workOrdersResponse, usersResponse] = await Promise.all([
-        fetch('/api/work-orders'),
-        fetch('/api/users')
-      ]);
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
 
-      if (!workOrdersResponse.ok || !usersResponse.ok) {
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      // For now, we'll just fetch users since work orders endpoint doesn't exist yet
+      const usersResponse = await fetch('http://localhost:8000/api/v1/users/', {
+        headers
+      });
+
+      if (!usersResponse.ok) {
+        if (usersResponse.status === 401) {
+          throw new Error('Session expired. Please login again.');
+        }
         throw new Error('Failed to fetch dashboard data');
       }
 
-      state.workOrders = await workOrdersResponse.json();
+      // Mock work orders data for now
+      state.workOrders = [
+        { id: 1, title: 'Sample Work Order 1', status: 'open', created_at: new Date().toISOString() },
+        { id: 2, title: 'Sample Work Order 2', status: 'completed', created_at: new Date().toISOString() }
+      ];
+      
       state.users = await usersResponse.json();
     } catch (err) {
       state.error = err instanceof Error ? err.message : 'An error occurred';
+      console.error('Dashboard data fetch error:', err);
     } finally {
       state.isLoading = false;
     }
@@ -142,12 +161,13 @@
 
 <style>
   .dashboard {
-    padding: 2rem;
+    padding: 1rem;
   }
 
   h1 {
     margin-bottom: 2rem;
-    color: var(--primary-color);
+    font-size: 2rem;
+    font-weight: 600;
   }
 
   .loading, .error {
@@ -155,54 +175,67 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 3rem;
+    padding: 2rem;
     text-align: center;
-    color: var(--secondary-color);
   }
 
-  .error {
-    color: var(--error-color);
+  .loading :global(svg), .error :global(svg) {
+    width: 2rem;
+    height: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .error :global(svg) {
+    color: #dc2626;
+  }
+
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 1.5rem;
-    margin-bottom: 2rem;
   }
 
   .stat-card {
     background: white;
     border-radius: 0.5rem;
     padding: 1.5rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
   }
 
   .stat-icon {
-    width: 3rem;
-    height: 3rem;
+    background-color: #f3f4f6;
     border-radius: 0.5rem;
-    background-color: var(--background-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: 0.75rem;
     margin-right: 1rem;
-    color: var(--primary-color);
+  }
+
+  .stat-icon :global(svg) {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: #3498db;
   }
 
   .stat-content h3 {
-    margin: 0;
     font-size: 0.875rem;
-    color: var(--secondary-color);
+    color: #6b7280;
+    margin: 0 0 0.25rem;
   }
 
   .stat-value {
-    margin: 0.25rem 0 0;
     font-size: 1.5rem;
     font-weight: 600;
-    color: var(--text-color);
+    margin: 0;
   }
 
   .recent-section {
@@ -313,14 +346,5 @@
 
   .view-all-link:hover {
     text-decoration: underline;
-  }
-
-  .animate-spin {
-    animation: spin 1s linear infinite;
-  }
-
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
   }
 </style> 
