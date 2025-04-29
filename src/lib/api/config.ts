@@ -1,8 +1,12 @@
 import { OpenAPI } from './core/OpenAPI';
 
+// Get environment variables with fallbacks
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
+const API_VERSION = import.meta.env.VITE_API_VERSION || '/api/v1';
+
 // Configure the OpenAPI client
-OpenAPI.BASE = 'http://localhost:8000';
-OpenAPI.VERSION = '/api/v1';
+OpenAPI.BASE = API_BASE;
+OpenAPI.VERSION = API_VERSION;
 OpenAPI.WITH_CREDENTIALS = false;
 OpenAPI.CREDENTIALS = 'include';
 
