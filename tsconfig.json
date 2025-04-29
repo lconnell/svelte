@@ -23,7 +23,8 @@
     "strictFunctionTypes": true,
     "strictBindCallApply": true,
     "strictPropertyInitialization": true,
-    "useUnknownInCatchVariables": true
+    "useUnknownInCatchVariables": true,
+    "types": ["unplugin-icons/types/svelte"]
   },
   "include": [
     "src/**/*.d.ts",

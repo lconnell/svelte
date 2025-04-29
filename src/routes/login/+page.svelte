@@ -1,17 +1,18 @@
 <!-- src/routes/login/+page.svelte -->
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { faEnvelope, faLock } from '@fortawesome/free-solid-svg-icons';
+  import { user } from '$lib/stores/auth';
+  import Mail from '~icons/lucide/mail';
+  import Lock from '~icons/lucide/lock';
 
   const state = $state({
     email: '',
     password: '',
-    error: '',
-    isLoading: false
+    isLoading: false,
+    error: ''
   });
 
-  async function handleSubmit(event: Event) {
-    event.preventDefault();
+  async function handleSubmit() {
     state.isLoading = true;
     state.error = '';
 
@@ -31,7 +32,9 @@
         throw new Error('Invalid credentials');
       }
 
-      await goto('/dashboard');
+      const data = await response.json();
+      user.set(data.user);
+      goto('/');
     } catch (err) {
       state.error = err instanceof Error ? err.message : 'An error occurred';
     } finally {
@@ -42,47 +45,36 @@
 
 <div class="login-container">
   <div class="login-card">
-    <h1>Work Order App</h1>
+    <h1>Login</h1>
+
+    {#if state.error}
+      <div class="error-message">
+        {state.error}
+      </div>
+    {/if}
+
     <form onsubmit={handleSubmit}>
-      <div class="form-group">
-        <label for="email">
-          <i class="fa-icon">{faEnvelope}</i>
-          Email
-        </label>
+      <div class="input-group">
+        <Mail />
         <input
           type="email"
-          id="email"
+          placeholder="Email"
           bind:value={state.email}
           required
-          autocomplete="email"
         />
       </div>
 
-      <div class="form-group">
-        <label for="password">
-          <i class="fa-icon">{faLock}</i>
-          Password
-        </label>
+      <div class="input-group">
+        <Lock />
         <input
           type="password"
-          id="password"
+          placeholder="Password"
           bind:value={state.password}
           required
-          autocomplete="current-password"
         />
       </div>
 
-      {#if state.error}
-        <div class="error-message">
-          {state.error}
-        </div>
-      {/if}
-
-      <button
-        type="submit"
-        class="button login-button"
-        disabled={state.isLoading}
-      >
+      <button type="submit" disabled={state.isLoading}>
         {state.isLoading ? 'Logging in...' : 'Login'}
       </button>
     </form>
@@ -95,45 +87,55 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+    padding: 1rem;
     background-color: var(--background-color);
   }
 
   .login-card {
-    background: white;
-    padding: 2rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 400px;
+    padding: 2rem;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   h1 {
+    margin: 0 0 2rem;
     text-align: center;
-    margin-bottom: 2rem;
     color: var(--primary-color);
   }
 
-  .form-group {
-    margin-bottom: 1.5rem;
+  .error-message {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    background-color: var(--error-bg);
+    color: var(--error-text);
+    border-radius: 0.25rem;
+    text-align: center;
   }
 
-  label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
+  .input-group {
+    position: relative;
+    margin-bottom: 1rem;
   }
 
-  .fa-icon {
-    width: 16px;
+  .input-group :global(svg) {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
     color: var(--secondary-color);
   }
 
   input {
     width: 100%;
-    padding: 0.75rem;
+    padding: 0.75rem 1rem 0.75rem 3rem;
     border: 1px solid var(--border-color);
-    border-radius: 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 1rem;
     transition: border-color 0.2s;
   }
 
@@ -142,13 +144,23 @@
     border-color: var(--primary-color);
   }
 
-  .login-button {
+  button {
     width: 100%;
-    margin-top: 1rem;
     padding: 0.75rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
   }
 
-  .login-button:disabled {
+  button:hover:not(:disabled) {
+    background-color: var(--primary-dark);
+  }
+
+  button:disabled {
     opacity: 0.7;
     cursor: not-allowed;
   }

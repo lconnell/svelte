@@ -1,160 +1,189 @@
 <!-- Sidebar.svelte -->
 <script lang="ts">
-  import { Home, Clipboard, Users, Settings, LogOut } from 'lucide-svelte';
-  import type { User } from '$lib/types';
+  import { page } from '$app/stores';
+  import { user } from '$lib/stores/auth';
+  import { goto } from '$app/navigation';
+  import Menu from '~icons/lucide/menu';
+  import Shield from '~icons/lucide/shield';
+  import Home from '~icons/lucide/home';
+  import Users from '~icons/lucide/users';
+  import Settings from '~icons/lucide/settings';
+  import User from '~icons/lucide/user';
+  import LogOut from '~icons/lucide/log-out';
+  import LogIn from '~icons/lucide/log-in';
 
-  let { props } = $props<{
-    user: User;
-  }>();
+  let isOpen = $state(false);
 
-  const menuItems = [
-    { href: '/', icon: Home, label: 'Dashboard' },
-    { href: '/work-orders', icon: Clipboard, label: 'Work Orders' },
-    { href: '/users', icon: Users, label: 'Users' },
-    { href: '/settings', icon: Settings, label: 'Settings' }
-  ];
-
-  function handleLogout() {
-    // Implement logout logic
+  function toggleSidebar() {
+    isOpen = !isOpen;
   }
 
-  let currentPath = $state('');
-  
-  // Update current path when it changes
-  $effect(() => {
-    currentPath = window.location.pathname;
-  });
+  async function handleLogout() {
+    // Clear the user store
+    user.set(null);
+    // Redirect to login page
+    goto('/login');
+  }
 </script>
 
-<nav class="sidebar">
-  <div class="user-info">
-    <div class="avatar">{props.user.name[0]}</div>
-    <div class="user-details">
-      <span class="name">{props.user.name}</span>
-      <span class="role">{props.user.role}</span>
-    </div>
-  </div>
+<nav class="sidebar" class:open={isOpen}>
+  <button class="toggle-button" onclick={toggleSidebar}>
+    <Menu />
+  </button>
 
-  <ul class="menu">
-    {#each menuItems as item}
-      <li>
-        <a
-          href={item.href}
-          class="menu-item"
-          class:active={currentPath === item.href}
-        >
-          {#if item.icon}
-            <item.icon size={20} />
-          {/if}
-          <span>{item.label}</span>
+  <div class="sidebar-content">
+    <div class="logo">
+      <Shield />
+      <span>Admin Panel</span>
+    </div>
+
+    <ul class="nav-links">
+      <li class:active={$page.url.pathname === '/'}>
+        <a href="/">
+          <Home />
+          <span>Dashboard</span>
         </a>
       </li>
-    {/each}
-  </ul>
+      <li class:active={$page.url.pathname === '/users'}>
+        <a href="/users">
+          <Users />
+          <span>Users</span>
+        </a>
+      </li>
+      <li class:active={$page.url.pathname === '/settings'}>
+        <a href="/settings">
+          <Settings />
+          <span>Settings</span>
+        </a>
+      </li>
+    </ul>
 
-  <button class="logout-button" onclick={handleLogout}>
-    <LogOut size={20} />
-    <span>Logout</span>
-  </button>
+    <div class="user-info">
+      {#if $user}
+        <div class="user-details">
+          <User />
+          <span>{$user.email}</span>
+        </div>
+        <button class="logout-button" onclick={handleLogout}>
+          <LogOut />
+          <span>Logout</span>
+        </button>
+      {:else}
+        <a href="/login" class="login-link">
+          <LogIn />
+          <span>Login</span>
+        </a>
+      {/if}
+    </div>
+  </div>
 </nav>
 
 <style>
   .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 250px;
     height: 100vh;
     background-color: #1a1a1a;
-    color: white;
-    padding: 20px;
+    color: #fff;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    z-index: 1000;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .toggle-button {
+    position: absolute;
+    top: 1rem;
+    right: -3rem;
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 0.5rem;
+    font-size: 1.5rem;
+  }
+
+  .sidebar-content {
+    padding: 1rem;
+    height: 100%;
     display: flex;
     flex-direction: column;
   }
 
-  .user-info {
+  .logo {
     display: flex;
     align-items: center;
-    padding: 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 20px;
+    gap: 0.5rem;
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 2rem;
   }
 
-  .avatar {
-    width: 40px;
-    height: 40px;
-    background-color: #4a5568;
-    border-radius: 50%;
+  .nav-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .nav-links li {
+    margin-bottom: 0.5rem;
+  }
+
+  .nav-links a {
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    margin-right: 12px;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+  }
+
+  .nav-links a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .nav-links li.active a {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .user-info {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .user-details {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
   }
 
-  .name {
-    font-weight: 600;
-    font-size: 1rem;
-  }
-
-  .role {
-    font-size: 0.875rem;
-    color: #a0aec0;
-  }
-
-  .menu {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    flex-grow: 1;
-  }
-
-  .menu-item {
+  .logout-button,
+  .login-link {
     display: flex;
     align-items: center;
-    padding: 12px 16px;
-    color: #a0aec0;
-    text-decoration: none;
-    border-radius: 6px;
-    margin-bottom: 4px;
-    transition: all 0.2s;
-  }
-
-  .menu-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-  }
-
-  .menu-item.active {
-    background-color: #4a5568;
-    color: white;
-  }
-
-  .menu-item :global(svg) {
-    margin-right: 12px;
-  }
-
-  .logout-button {
-    display: flex;
-    align-items: center;
-    padding: 12px 16px;
-    background: none;
-    border: none;
-    color: #a0aec0;
-    cursor: pointer;
+    gap: 0.5rem;
     width: 100%;
-    border-radius: 6px;
-    transition: all 0.2s;
+    padding: 0.75rem;
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    cursor: pointer;
+    text-decoration: none;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
   }
 
-  .logout-button:hover {
+  .logout-button:hover,
+  .login-link:hover {
     background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-  }
-
-  .logout-button :global(svg) {
-    margin-right: 12px;
   }
 </style> 
