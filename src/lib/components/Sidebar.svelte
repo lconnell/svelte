@@ -4,13 +4,12 @@
   import { user } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
   import Menu from '~icons/lucide/menu';
-  import Shield from '~icons/lucide/shield';
+  import X from '~icons/lucide/x';
   import Home from '~icons/lucide/home';
   import Users from '~icons/lucide/users';
   import Settings from '~icons/lucide/settings';
-  import User from '~icons/lucide/user';
   import LogOut from '~icons/lucide/log-out';
-  import LogIn from '~icons/lucide/log-in';
+  import User from '~icons/lucide/user';
 
   let isOpen = $state(true);
 
@@ -18,76 +17,65 @@
     isOpen = !isOpen;
   }
 
-  async function handleLogout() {
+  function handleLogout() {
     localStorage.removeItem('auth_token');
     user.set(null);
     goto('/login');
   }
 </script>
 
-<nav class="sidebar" class:open={isOpen}>
-  <button class="toggle-button" on:click={toggleSidebar}>
-    <Menu />
-  </button>
-
-  <div class="sidebar-content">
-    <div class="logo">
-      <Shield />
-      <span>Admin Panel</span>
-    </div>
-
-    <ul class="nav-links">
-      <li class:active={$page.url.pathname === '/'}>
-        <a href="/">
-          <Home />
-          <span>Dashboard</span>
-        </a>
-      </li>
-      <li class:active={$page.url.pathname === '/users'}>
-        <a href="/users">
-          <Users />
-          <span>Users</span>
-        </a>
-      </li>
-      <li class:active={$page.url.pathname === '/settings'}>
-        <a href="/settings">
-          <Settings />
-          <span>Settings</span>
-        </a>
-      </li>
-    </ul>
-
-    <div class="user-info">
-      {#if $user}
-        <div class="user-details">
-          <User />
-          <span>{$user.email}</span>
-        </div>
-        <button class="logout-button" on:click={handleLogout}>
-          <LogOut />
-          <span>Logout</span>
-        </button>
+<aside class="sidebar" class:open={isOpen}>
+  <div class="sidebar-header">
+    <h2>Admin Panel</h2>
+    <button class="toggle-button" onclick={toggleSidebar}>
+      {#if isOpen}
+        <X class="w-5 h-5" />
       {:else}
-        <a href="/login" class="login-link">
-          <LogIn />
-          <span>Login</span>
-        </a>
+        <Menu class="w-5 h-5" />
       {/if}
-    </div>
+    </button>
   </div>
-</nav>
+
+  <nav class="sidebar-nav">
+    <a href="/" class:active={$page.url.pathname === '/'}>
+      <Home class="w-5 h-5" />
+      <span>Dashboard</span>
+    </a>
+    <a href="/users" class:active={$page.url.pathname === '/users'}>
+      <Users class="w-5 h-5" />
+      <span>Users</span>
+    </a>
+    <a href="/settings" class:active={$page.url.pathname === '/settings'}>
+      <Settings class="w-5 h-5" />
+      <span>Settings</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <User class="w-5 h-5" />
+      <span class="user-name">{$user?.email || 'User'}</span>
+    </div>
+    <button class="logout-button" onclick={handleLogout}>
+      <LogOut class="w-5 h-5" />
+      <span>Logout</span>
+    </button>
+  </div>
+</aside>
 
 <style>
   .sidebar {
     position: fixed;
     top: 0;
     left: 0;
-    width: 250px;
     height: 100vh;
+    width: 250px;
     background-color: #1a1a1a;
     color: #fff;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease-in-out;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease;
     z-index: 1000;
   }
 
@@ -95,94 +83,93 @@
     transform: translateX(0);
   }
 
+  .sidebar:not(.open) {
+    transform: translateX(-250px);
+  }
+
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
   .toggle-button {
-    position: absolute;
-    top: 1rem;
-    right: -3rem;
     background: none;
     border: none;
     color: #fff;
     cursor: pointer;
     padding: 0.5rem;
-    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  .sidebar-content {
-    padding: 1rem;
-    height: 100%;
+  .sidebar-nav {
     display: flex;
     flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
   }
 
-  .logo {
+  a {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 1.25rem;
-    font-weight: bold;
-    margin-bottom: 2rem;
-  }
-
-  .nav-links {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .nav-links li {
-    margin-bottom: 0.5rem;
-  }
-
-  .nav-links a {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     padding: 0.75rem;
     color: #fff;
     text-decoration: none;
-    border-radius: 0.25rem;
+    border-radius: 0.375rem;
     transition: background-color 0.2s;
   }
 
-  .nav-links a:hover {
+  a:hover {
     background-color: rgba(255, 255, 255, 0.1);
   }
 
-  .nav-links li.active a {
-    background-color: rgba(255, 255, 255, 0.2);
+  a.active {
+    background-color: #3498db;
   }
 
-  .user-info {
+  .sidebar-footer {
     margin-top: auto;
     padding-top: 1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  .user-details {
+  .user-info {
+    margin-bottom: 1rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+    gap: 0.75rem;
   }
 
-  .logout-button,
-  .login-link {
+  .user-name {
+    font-size: 0.875rem;
+    color: #9ca3af;
+  }
+
+  .logout-button {
+    width: 100%;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    width: 100%;
+    gap: 0.75rem;
     padding: 0.75rem;
     background: none;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: #fff;
+    border-radius: 0.375rem;
     cursor: pointer;
-    text-decoration: none;
-    border-radius: 0.25rem;
     transition: background-color 0.2s;
   }
 
-  .logout-button:hover,
-  .login-link:hover {
+  .logout-button:hover {
     background-color: rgba(255, 255, 255, 0.1);
   }
 </style> 

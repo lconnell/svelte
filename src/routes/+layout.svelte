@@ -78,7 +78,7 @@
 
 {#if state.isLoading}
   <div class="loading-container">
-    <Loader class="animate-spin" />
+    <Loader />
     <p>Loading...</p>
   </div>
 {:else if isPublicRoute}
@@ -108,9 +108,6 @@
     width: 2rem;
     height: 2rem;
     color: #3498db;
-  }
-
-  .animate-spin {
     animation: spin 1s linear infinite;
   }
 
