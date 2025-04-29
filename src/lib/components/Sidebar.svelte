@@ -26,6 +26,9 @@
 <aside class="sidebar" class:open={$sidebarOpen}>
   <div class="sidebar-header">
     <h2>Admin Panel</h2>
+    <button class="toggle-button" onclick={toggleSidebar}>
+      <X class="w-5 h-5" />
+    </button>
   </div>
 
   <nav class="sidebar-nav">
@@ -55,12 +58,8 @@
   </div>
 </aside>
 
-<button class="persistent-toggle" onclick={toggleSidebar}>
-  {#if $sidebarOpen}
-    <X class="w-5 h-5" />
-  {:else}
-    <Menu class="w-5 h-5" />
-  {/if}
+<button class="persistent-toggle" class:sidebar-open={$sidebarOpen} onclick={toggleSidebar}>
+  <Menu class="w-5 h-5" />
 </button>
 
 <style>
@@ -89,19 +88,26 @@
 
   .persistent-toggle {
     position: fixed;
-    top: 1rem;
-    left: 1rem;
+    top: 0;
+    left: 0;
     background: #1a1a1a;
     border: none;
     color: #fff;
     cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 0.375rem;
+    padding: 0.35rem;
+    border-radius: 0 0 0.5rem 0;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1001;
-    transition: background-color 0.2s;
+    transition: all 0.3s ease;
+    width: 32px;
+    height: 32px;
+  }
+
+  .persistent-toggle.sidebar-open {
+    opacity: 0;
+    pointer-events: none;
   }
 
   .persistent-toggle:hover {
@@ -181,5 +187,20 @@
 
   .logout-button:hover {
     background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .toggle-button {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .toggle-button:hover {
+    color: #9ca3af;
   }
 </style> 
