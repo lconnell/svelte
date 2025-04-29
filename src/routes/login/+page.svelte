@@ -104,7 +104,9 @@
 
       <button type="submit" disabled={state.isLoading}>
         {#if state.isLoading}
-          <Loader class="animate-spin" />
+          <div class="animate-spin">
+            <Loader />
+          </div>
           <span>Logging in...</span>
         {:else}
           <span>Login</span>
@@ -233,6 +235,11 @@
 
   .animate-spin {
     animation: spin 1s linear infinite;
+  }
+
+  .animate-spin :global(svg) {
+    width: 1.25rem;
+    height: 1.25rem;
   }
 
   @keyframes spin {

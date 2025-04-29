@@ -22,13 +22,43 @@
     state.error = '';
 
     try {
-      const response = await fetch('/api/users');
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch('http://localhost:8000/api/v1/users/', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Session expired. Please login again.');
+        }
         throw new Error('Failed to fetch users');
       }
-      state.users = await response.json();
+
+      const data = await response.json();
+      
+      // Check if the response has a 'items' property (common in paginated APIs)
+      // or if it's directly an array of users
+      const usersData = Array.isArray(data) ? data : (data.items || []);
+      
+      // Ensure we have valid user objects
+      state.users = usersData.map((user: any) => ({
+        id: user.id || '',
+        name: user.name || user.email || 'Unknown User',
+        email: user.email || '',
+        role: user.role || 'user'
+      }));
+      
     } catch (err) {
       state.error = err instanceof Error ? err.message : 'An error occurred';
+      console.error('Users fetch error:', err);
+      state.users = []; // Reset users array on error
     } finally {
       state.isLoading = false;
     }
@@ -49,17 +79,30 @@
     }
 
     try {
-      const response = await fetch(`/api/users/${userId}`, {
-        method: 'DELETE'
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(`http://localhost:8000/api/v1/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Session expired. Please login again.');
+        }
         throw new Error('Failed to delete user');
       }
 
       state.users = state.users.filter(user => user.id !== userId);
     } catch (err) {
       state.error = err instanceof Error ? err.message : 'An error occurred';
+      console.error('Delete user error:', err);
     }
   }
 
@@ -68,10 +111,15 @@
   });
 
   $effect(() => {
-    state.filteredUsers = state.users.filter(user =>
-      user.name.toLowerCase().includes(state.searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(state.searchQuery.toLowerCase())
-    );
+    // Ensure we're working with an array before filtering
+    if (Array.isArray(state.users)) {
+      state.filteredUsers = state.users.filter(user =>
+        (user.name?.toLowerCase().includes(state.searchQuery.toLowerCase()) || false) ||
+        (user.email?.toLowerCase().includes(state.searchQuery.toLowerCase()) || false)
+      );
+    } else {
+      state.filteredUsers = [];
+    }
   });
 </script>
 
