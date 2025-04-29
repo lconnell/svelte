@@ -1,10 +1,14 @@
 <!-- src/routes/users/+page.svelte -->
 <script lang="ts">
-  import type { User } from '$lib/types';
+  import type { User } from '$lib/types/user';
   import Plus from '~icons/lucide/plus';
   import Edit from '~icons/lucide/edit';
   import Trash from '~icons/lucide/trash';
   import Search from '~icons/lucide/search';
+  import Mail from '~icons/lucide/mail';
+  import UserIcon from '~icons/lucide/user';
+  import Lock from '~icons/lucide/lock';
+  import { goto } from '$app/navigation';
 
   const state = $state({
     users: [] as User[],
@@ -14,7 +18,15 @@
     showCreateModal: false,
     showEditModal: false,
     selectedUser: null as User | null,
-    filteredUsers: [] as User[]
+    filteredUsers: [] as User[],
+    isSubmitting: false,
+    formData: {
+      email: '',
+      password: '',
+      full_name: '',
+      is_active: true,
+      is_superuser: false
+    }
   });
 
   async function fetchUsers() {
@@ -22,55 +34,140 @@
     state.error = '';
 
     try {
+      console.log('Starting to fetch users...');
       const token = localStorage.getItem('auth_token');
+      console.log('Token from localStorage:', token ? 'Present' : 'Missing');
+      
       if (!token) {
-        throw new Error('Not authenticated');
+        console.log('No token found, redirecting to login');
+        goto('/login');
+        return;
       }
 
+      console.log('Making users request...');
       const response = await fetch('http://localhost:8000/api/v1/users/', {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
       });
 
+      console.log('Users response status:', response.status);
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error('Session expired. Please login again.');
+          console.log('Unauthorized, redirecting to login');
+          localStorage.removeItem('auth_token'); // Clear invalid token
+          goto('/login');
+          return;
         }
-        throw new Error('Failed to fetch users');
+        const errorData = await response.json();
+        console.error('Users error response:', errorData);
+        throw new Error(errorData.detail || 'Failed to fetch users');
       }
 
       const data = await response.json();
+      console.log('Users data received:', data);
       
-      // Check if the response has a 'items' property (common in paginated APIs)
-      // or if it's directly an array of users
-      const usersData = Array.isArray(data) ? data : (data.items || []);
-      
-      // Ensure we have valid user objects
+      // Transform the data to match our User type
+      const usersData = Array.isArray(data) ? data : (data.data || []);
       state.users = usersData.map((user: any) => ({
         id: user.id || '',
-        name: user.name || user.email || 'Unknown User',
+        name: user.full_name || user.email || 'Unknown User',
         email: user.email || '',
-        role: user.role || 'user'
+        role: user.is_superuser ? 'admin' : 'user',
+        createdAt: user.created_at || new Date().toISOString(),
+        updatedAt: user.updated_at || new Date().toISOString()
       }));
-      
     } catch (err) {
-      state.error = err instanceof Error ? err.message : 'An error occurred';
-      console.error('Users fetch error:', err);
-      state.users = []; // Reset users array on error
+      console.error('Error fetching users:', err);
+      state.error = err instanceof Error ? err.message : 'An error occurred while fetching users';
     } finally {
       state.isLoading = false;
     }
   }
 
+  function resetForm() {
+    state.formData = {
+      email: '',
+      password: '',
+      full_name: '',
+      is_active: true,
+      is_superuser: false
+    };
+  }
+
   function openCreateModal() {
+    resetForm();
     state.showCreateModal = true;
   }
 
   function openEditModal(user: User) {
+    state.formData = {
+      email: user.email,
+      password: '', // Don't populate password for security
+      full_name: user.name,
+      is_active: true,
+      is_superuser: user.role === 'admin'
+    };
     state.selectedUser = user;
     state.showEditModal = true;
+  }
+
+  async function handleSubmit(isEdit: boolean) {
+    state.isSubmitting = true;
+    state.error = '';
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        goto('/login');
+        return;
+      }
+
+      const url = isEdit 
+        ? `http://localhost:8000/api/v1/users/${state.selectedUser?.id}`
+        : 'http://localhost:8000/api/v1/users/';
+
+      const method = isEdit ? 'PUT' : 'POST';
+
+      // Prepare data for submission
+      let submitData: Record<string, any> = { ...state.formData };
+      
+      // For edit, remove password if empty
+      if (isEdit && !submitData.password) {
+        const { password, ...dataWithoutPassword } = submitData;
+        submitData = dataWithoutPassword;
+      }
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(submitData)
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          goto('/login');
+          return;
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to save user');
+      }
+
+      // Close modal and refresh users
+      state.showCreateModal = false;
+      state.showEditModal = false;
+      await fetchUsers();
+    } catch (err) {
+      state.error = err instanceof Error ? err.message : 'An error occurred';
+      console.error('Save user error:', err);
+    } finally {
+      state.isSubmitting = false;
+    }
   }
 
   async function handleDelete(userId: string) {
@@ -81,7 +178,8 @@
     try {
       const token = localStorage.getItem('auth_token');
       if (!token) {
-        throw new Error('Not authenticated');
+        goto('/login');
+        return;
       }
 
       const response = await fetch(`http://localhost:8000/api/v1/users/${userId}`, {
@@ -94,7 +192,8 @@
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error('Session expired. Please login again.');
+          goto('/login');
+          return;
         }
         throw new Error('Failed to delete user');
       }
@@ -111,7 +210,6 @@
   });
 
   $effect(() => {
-    // Ensure we're working with an array before filtering
     if (Array.isArray(state.users)) {
       state.filteredUsers = state.users.filter(user =>
         (user.name?.toLowerCase().includes(state.searchQuery.toLowerCase()) || false) ||
@@ -133,7 +231,7 @@
   </div>
 
   <div class="search-bar">
-    <div class="input-wrapper">
+    <div class="input-group">
       <Search />
       <input
         type="text"
@@ -180,15 +278,137 @@
   {/if}
 </div>
 
+<!-- Create User Modal -->
+{#if state.showCreateModal}
+  <div class="modal-backdrop" onclick={() => state.showCreateModal = false}>
+    <div class="modal" onclick={(e) => e.stopPropagation()}>
+      <h2>Create User</h2>
+      <form onsubmit={(e) => { e.preventDefault(); handleSubmit(false); }}>
+        <div class="form-group">
+          <label for="create-email">Email</label>
+          <div class="input-group">
+            <Mail />
+            <input
+              id="create-email"
+              type="email"
+              bind:value={state.formData.email}
+              required
+            />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="create-password">Password</label>
+          <div class="input-group">
+            <Lock />
+            <input
+              id="create-password"
+              type="password"
+              bind:value={state.formData.password}
+              required
+            />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="create-name">Full Name</label>
+          <div class="input-group">
+            <UserIcon />
+            <input
+              id="create-name"
+              type="text"
+              bind:value={state.formData.full_name}
+              required
+            />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="create-role">Role</label>
+          <select id="create-role" bind:value={state.formData.is_superuser}>
+            <option value={false}>User</option>
+            <option value={true}>Admin</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="standard-button" onclick={() => state.showCreateModal = false}>
+            Cancel
+          </button>
+          <button type="submit" class="standard-button primary" disabled={state.isSubmitting}>
+            {state.isSubmitting ? 'Creating...' : 'Create User'}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+{/if}
+
+<!-- Edit User Modal -->
+{#if state.showEditModal}
+  <div class="modal-backdrop" onclick={() => state.showEditModal = false}>
+    <div class="modal" onclick={(e) => e.stopPropagation()}>
+      <h2>Edit User</h2>
+      <form onsubmit={(e) => { e.preventDefault(); handleSubmit(true); }}>
+        <div class="form-group">
+          <label for="edit-email">Email</label>
+          <div class="input-group">
+            <Mail />
+            <input
+              id="edit-email"
+              type="email"
+              bind:value={state.formData.email}
+              required
+            />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="edit-password">Password (leave blank to keep current)</label>
+          <div class="input-group">
+            <Lock />
+            <input
+              id="edit-password"
+              type="password"
+              bind:value={state.formData.password}
+            />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="edit-name">Full Name</label>
+          <div class="input-group">
+            <UserIcon />
+            <input
+              id="edit-name"
+              type="text"
+              bind:value={state.formData.full_name}
+              required
+            />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="edit-role">Role</label>
+          <select id="edit-role" bind:value={state.formData.is_superuser}>
+            <option value={false}>User</option>
+            <option value={true}>Admin</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="standard-button" onclick={() => state.showEditModal = false}>
+            Cancel
+          </button>
+          <button type="submit" class="standard-button primary" disabled={state.isSubmitting}>
+            {state.isSubmitting ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+{/if}
+
 <style>
+  /* Only keep component-specific styles that aren't in app.css */
   .user-info h3 {
     margin: 0 0 0.5rem;
-    color: var(--text-color);
   }
 
   .user-info p {
     margin: 0 0 0.75rem;
-    color: var(--text-color-light);
   }
 
   .actions {
@@ -196,40 +416,67 @@
     gap: var(--spacing-sm);
   }
 
-  /* Ensure search bar styles are applied */
-  :global(.search-bar) {
-    position: relative;
-    margin-bottom: 2rem;
+  .modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
   }
 
-  :global(.search-bar .input-wrapper) {
-    position: relative;
+  .modal {
+    background-color: var(--input-bg);
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius-lg);
+    width: 100%;
+    max-width: 500px;
+    box-shadow: var(--shadow-lg);
   }
 
-  :global(.search-bar .input-wrapper svg) {
+  .modal h2 {
+    margin: 0 0 var(--spacing-lg);
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-xl);
+  }
+
+  /* Input group styling to match settings page */
+  .input-group {
+    position: relative;
+    margin-bottom: 1rem;
+  }
+
+  .input-group :global(svg) {
     position: absolute;
     left: 1rem;
     top: 50%;
     transform: translateY(-50%);
     width: 20px;
     height: 20px;
-    color: #9ca3af;
-    pointer-events: none;
+    color: var(--secondary-color);
   }
 
-  :global(.search-bar input) {
+  input {
     width: 100%;
     padding: 0.75rem 1rem 0.75rem 3rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    transition: border-color 0.15s ease-in-out;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    transition: border-color 0.2s;
   }
 
-  :global(.search-bar input:focus) {
+  input:focus {
     outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    border-color: var(--primary-color);
   }
 
   h1 {

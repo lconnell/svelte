@@ -16,36 +16,54 @@
     error = '';
 
     try {
+      console.log('Starting login process...');
       // Create form data for the request
       const formData = new FormData();
       formData.append('username', email);
       formData.append('password', password);
 
+      console.log('Making login request...');
       const response = await fetch('http://localhost:8000/api/v1/login/access-token', {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers: {
+          'Accept': 'application/json'
+        }
       });
 
+      console.log('Login response status:', response.status);
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Login error response:', errorData);
         throw new Error(errorData.detail || 'Login failed');
       }
 
       const data = await response.json();
-      localStorage.setItem('auth_token', data.access_token);
+      console.log('Login successful, token received');
+      
+      // Store the token with the correct type
+      const token = `${data.token_type || 'bearer'} ${data.access_token}`;
+      localStorage.setItem('auth_token', token);
+      console.log('Token stored in localStorage');
       
       // Fetch user data after successful login
+      console.log('Fetching user data...');
       const userResponse = await fetch('http://localhost:8000/api/v1/users/me', {
         headers: {
-          'Authorization': `Bearer ${data.access_token}`
+          'Authorization': token,
+          'Accept': 'application/json'
         }
       });
       
+      console.log('User data response status:', userResponse.status);
       if (!userResponse.ok) {
+        const errorData = await userResponse.json();
+        console.error('User data error:', errorData);
         throw new Error('Failed to fetch user data');
       }
       
       const userData = await userResponse.json();
+      console.log('User data received:', userData);
       user.set(userData);
       goto('/');
     } catch (err) {
