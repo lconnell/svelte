@@ -1,6 +1,7 @@
 <!-- src/routes/users/+page.svelte -->
 <script lang="ts">
   import type { User } from '$lib/types/user';
+  import type { UserPublic } from '$lib/api/models/UserPublic';
   import Plus from '~icons/lucide/plus';
   import Edit from '~icons/lucide/edit';
   import Trash from '~icons/lucide/trash';
@@ -8,7 +9,6 @@
   import Mail from '~icons/lucide/mail';
   import UserIcon from '~icons/lucide/user';
   import Lock from '~icons/lucide/lock';
-  import { goto } from '$app/navigation';
   import { UsersService } from '$lib/api/services/UsersService';
 
   const state = $state({
@@ -35,33 +35,42 @@
     state.error = '';
 
     try {
-      console.log('Starting to fetch users...');
-      const token = localStorage.getItem('auth_token');
-      console.log('Token from localStorage:', token ? 'Present' : 'Missing');
+      // The API should return an array of UserPublic objects
+      const response = await UsersService.usersReadUsers();
       
-      if (!token) {
-        console.log('No token found, redirecting to login');
-        goto('/login');
-        return;
+      // Debug the response
+      console.log('Users API response:', response);
+      
+      // Handle different response formats
+      let usersData: UserPublic[] = [];
+      
+      if (Array.isArray(response)) {
+        // Direct array response
+        usersData = response;
+      } else if (response && typeof response === 'object') {
+        // Check if response has a data property that is an array
+        if ('data' in response && Array.isArray(response.data)) {
+          usersData = response.data;
+        } else {
+          // If we can't find an array, log the structure for debugging
+          console.error('Unexpected API response structure:', response);
+          state.error = 'Unexpected API response format';
+          return;
+        }
       }
-
-      console.log('Making users request...');
-      const data = await UsersService.usersReadUsers({});
-      console.log('Users data received:', data);
       
-      // Transform the data to match our User type
-      const usersData = Array.isArray(data) ? data : (data.data || []);
-      state.users = usersData.map((user: any) => ({
-        id: user.id || '',
+      // Transform the users data to match our User type
+      state.users = usersData.map((user: UserPublic) => ({
+        id: user.id,
         name: user.full_name || user.email || 'Unknown User',
         email: user.email || '',
         role: user.is_superuser ? 'admin' : 'user',
-        createdAt: user.created_at || new Date().toISOString(),
-        updatedAt: user.updated_at || new Date().toISOString()
+        createdAt: user.created_at,
+        updatedAt: user.created_at // Using created_at as updated_at since it's not available
       }));
-    } catch (err) {
-      console.error('Error fetching users:', err);
-      state.error = err instanceof Error ? err.message : 'An error occurred while fetching users';
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      state.error = error instanceof Error ? error.message : 'An unknown error occurred';
     } finally {
       state.isLoading = false;
     }
@@ -99,15 +108,9 @@
     state.error = '';
 
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        goto('/login');
-        return;
-      }
-
       if (isEdit && state.selectedUser) {
         await UsersService.usersUpdateUser({
-          userId: state.selectedUser.id,
+          userId: parseInt(state.selectedUser.id),
           requestBody: state.formData
         });
       } else {
@@ -134,13 +137,7 @@
     }
 
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        goto('/login');
-        return;
-      }
-
-      await UsersService.usersDeleteUser({ userId });
+      await UsersService.usersDeleteUser({ userId: parseInt(userId) });
       state.users = state.users.filter(user => user.id !== userId);
     } catch (err) {
       state.error = err instanceof Error ? err.message : 'An error occurred';

@@ -82,18 +82,8 @@ export const getQueryString = (params: Record<string, any>): string => {
 };
 
 const getUrl = (config: OpenAPIConfig, options: ApiRequestOptions): string => {
-    const encoder = config.ENCODE_PATH || encodeURI;
-
-    const path = options.url
-        .replace('{api-version}', config.VERSION)
-        .replace(/{(.*?)}/g, (substring: string, group: string) => {
-            if (options.path?.hasOwnProperty(group)) {
-                return encoder(String(options.path[group]));
-            }
-            return substring;
-        });
-
-    const url = `${config.BASE}${path}`;
+    const path = options.url;
+    const url = `${config.BASE}/${config.VERSION}${path}`;
     if (options.query) {
         return `${url}${getQueryString(options.query)}`;
     }

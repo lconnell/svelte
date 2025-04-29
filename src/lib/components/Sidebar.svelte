@@ -49,7 +49,7 @@
   <div class="sidebar-footer">
     <div class="user-info">
       <User class="w-5 h-5" />
-      <span class="user-name">{$user?.full_name || $user?.email || 'User'}</span>
+      <span class="user-name">{$user?.name || 'User'}</span>
     </div>
     <button class="logout-button" onclick={handleLogout}>
       <LogOut class="w-5 h-5" />

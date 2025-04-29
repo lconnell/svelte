@@ -10,6 +10,7 @@ import type { UserPublic } from '../models/UserPublic';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
+
 export class LoginService {
     /**
      * Login Access Token
@@ -24,7 +25,7 @@ export class LoginService {
     }): CancelablePromise<Token> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/login/access-token',
+            url: '/login/access-token',
             formData: formData,
             mediaType: 'application/x-www-form-urlencoded',
             errors: {
@@ -41,7 +42,7 @@ export class LoginService {
     public static loginTestToken(): CancelablePromise<UserPublic> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/login/test-token',
+            url: '/login/test-token',
         });
     }
     /**
@@ -57,7 +58,7 @@ export class LoginService {
     }): CancelablePromise<Message> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/password-recovery/{email}',
+            url: '/password-recovery/{email}',
             path: {
                 'email': email,
             },
@@ -79,7 +80,7 @@ export class LoginService {
     }): CancelablePromise<Message> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/reset-password/',
+            url: '/reset-password/',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -100,7 +101,7 @@ export class LoginService {
     }): CancelablePromise<string> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/password-recovery-html-content/{email}',
+            url: '/password-recovery-html-content/{email}',
             path: {
                 'email': email,
             },

@@ -8,6 +8,9 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import Loader from '~icons/lucide/loader';
+  import { isAuthenticated } from '$lib/api/auth_helper';
+  import { UsersService } from '$lib/api/services/UsersService';
+  import type { User } from '$lib/types/user';
   
   let { children } = $props<{
     children: () => unknown;
@@ -24,6 +27,41 @@
     $page.url.pathname === '/forgot-password'
   );
 
+  // Function to transform API user to our User type
+  function transformUser(apiUser: any): User {
+    return {
+      id: apiUser.id,
+      email: apiUser.email,
+      name: apiUser.full_name || apiUser.email,
+      role: apiUser.is_superuser ? 'admin' : 'user',
+      createdAt: apiUser.created_at || new Date().toISOString(),
+      updatedAt: apiUser.updated_at || new Date().toISOString()
+    };
+  }
+
+  // Function to fetch user data
+  async function fetchUserData() {
+    try {
+      const apiUser = await UsersService.usersReadUserMe();
+      user.set(transformUser(apiUser));
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  }
+
+  // Check if user is authenticated
+  $effect(() => {
+    if (isAuthenticated()) {
+      // User is authenticated, fetch user data
+      fetchUserData();
+    } else {
+      // User is not authenticated, redirect to login if not already there
+      if (window.location.pathname !== '/login') {
+        goto('/login');
+      }
+    }
+  });
+
   // Check authentication on mount
   $effect(() => {
     async function checkAuth() {
@@ -33,7 +71,7 @@
         return;
       }
 
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('access_token');
       
       // If no token and not on a public route, redirect to login
       if (!token && !isPublicRoute) {
@@ -44,28 +82,12 @@
       // If we have a token but no user data, try to fetch user data
       if (token && !$user) {
         try {
-          const response = await fetch('http://localhost:8000/api/v1/users/me', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-
-          if (!response.ok) {
-            // If token is invalid, clear it and redirect to login
-            if (response.status === 401) {
-              localStorage.removeItem('auth_token');
-              goto('/login');
-              return;
-            }
-            throw new Error('Failed to fetch user data');
-          }
-
-          const userData = await response.json();
-          user.set(userData);
+          const apiUser = await UsersService.usersReadUserMe();
+          user.set(transformUser(apiUser));
         } catch (err) {
           console.error('Auth check error:', err);
           // On error, clear token and redirect to login
-          localStorage.removeItem('auth_token');
+          localStorage.removeItem('access_token');
           goto('/login');
           return;
         }

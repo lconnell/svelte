@@ -10,6 +10,7 @@ import type { Message } from '../models/Message';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
+
 export class ItemsService {
     /**
      * Read Items
@@ -17,20 +18,10 @@ export class ItemsService {
      * @returns ItemsPublic Successful Response
      * @throws ApiError
      */
-    public static itemsReadItems({
-        skip,
-        limit = 100,
-    }: {
-        skip?: number,
-        limit?: number,
-    }): CancelablePromise<ItemsPublic> {
+    public static itemsReadItems(): CancelablePromise<ItemsPublic> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/items/',
-            query: {
-                'skip': skip,
-                'limit': limit,
-            },
+            url: '/items/',
             errors: {
                 422: `Validation Error`,
             },
@@ -49,7 +40,7 @@ export class ItemsService {
     }): CancelablePromise<ItemPublic> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/items/',
+            url: '/items/',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -70,7 +61,7 @@ export class ItemsService {
     }): CancelablePromise<ItemPublic> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/items/{id}',
+            url: '/items/{id}',
             path: {
                 'id': id,
             },
@@ -94,7 +85,7 @@ export class ItemsService {
     }): CancelablePromise<ItemPublic> {
         return __request(OpenAPI, {
             method: 'PUT',
-            url: '/api/v1/items/{id}',
+            url: '/items/{id}',
             path: {
                 'id': id,
             },
@@ -118,7 +109,7 @@ export class ItemsService {
     }): CancelablePromise<Message> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/items/{id}',
+            url: '/items/{id}',
             path: {
                 'id': id,
             },

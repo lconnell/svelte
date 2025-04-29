@@ -6,6 +6,7 @@ import type { Message } from '../models/Message';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
+
 export class UtilsService {
     /**
      * Test Email
@@ -38,6 +39,35 @@ export class UtilsService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/utils/health-check/',
+        });
+    }
+    /**
+     * Ping
+     * @returns string Successful Response
+     * @throws ApiError
+     */
+    public static utilsPing(): CancelablePromise<string> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/utils/ping',
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Read Items
+     * Retrieve items.
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static utilsReadItems(): CancelablePromise<Message> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/utils/items/',
+            errors: {
+                422: `Validation Error`,
+            },
         });
     }
 }

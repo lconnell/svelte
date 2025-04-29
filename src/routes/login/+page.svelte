@@ -1,11 +1,14 @@
 <!-- src/routes/login/+page.svelte -->
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { LoginService } from '$lib/api/services/LoginService';
+  import { UsersService } from '$lib/api/services/UsersService';
   import { user } from '$lib/stores/auth';
-  import { ApiService } from '$lib/api/services/ApiService';
+  import { goto } from '$app/navigation';
   import Mail from '~icons/lucide/mail';
   import Lock from '~icons/lucide/lock';
   import AlertCircle from '~icons/lucide/alert-circle';
+  import type { User } from '$lib/stores/auth';
+  import { setAuthToken } from '$lib/api/auth_helper';
 
   let email = $state('');
   let password = $state('');
@@ -17,43 +20,40 @@
     error = '';
 
     try {
-      console.log('Attempting login...');
-      const response = await ApiService.login({
-        username: email,
-        password: password
+      console.log('Attempting login with:', email);
+      const token = await LoginService.loginLoginAccessToken({
+        formData: {
+          username: email,
+          password: password,
+          grant_type: 'password'
+        }
       });
-      console.log('Login response:', response);
 
-      // Store tokens
-      localStorage.setItem('auth_token', response.access_token);
-      localStorage.setItem('refresh_token', response.refresh_token);
-      console.log('Tokens stored in localStorage');
+      console.log('Login successful, token received');
+      // Store token using the helper function
+      setAuthToken(token.access_token);
 
       // Get user data
-      console.log('Fetching user data...');
-      const userData = await ApiService.getCurrentUser();
-      console.log('User data received:', userData);
-
-      // Transform user data to match our User type
-      const transformedUser = {
-        id: userData.id,
-        name: userData.full_name || userData.email,
-        email: userData.email,
-        role: userData.role || 'user',
-        createdAt: userData.created_at,
-        updatedAt: userData.updated_at
+      console.log('Fetching user data');
+      const apiUser = await UsersService.usersReadUserMe();
+      
+      // Transform API user to our User type
+      const transformedUser: User = {
+        id: apiUser.id,
+        email: apiUser.email,
+        name: apiUser.full_name || '',
+        role: apiUser.is_superuser ? 'admin' : 'user'
       };
 
       // Update user store
       user.set(transformedUser);
-      console.log('User store updated');
+      console.log('User data set, redirecting to home page');
 
       // Redirect to dashboard
-      console.log('Redirecting to dashboard...');
       goto('/');
-    } catch (err) {
-      console.error('Login error:', err);
-      error = err instanceof Error ? err.message : 'An error occurred during login';
+    } catch (e) {
+      console.error('Login error:', e);
+      error = e instanceof Error ? e.message : 'An error occurred during login';
     } finally {
       loading = false;
     }
@@ -71,7 +71,7 @@
       </div>
     {/if}
 
-    <form onsubmit={handleSubmit}>
+    <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
       <div class="form-group">
         <label for="email">Email</label>
         <div class="input-wrapper">

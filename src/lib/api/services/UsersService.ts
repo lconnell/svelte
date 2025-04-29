@@ -7,33 +7,22 @@ import type { UpdatePassword } from '../models/UpdatePassword';
 import type { UserCreate } from '../models/UserCreate';
 import type { UserPublic } from '../models/UserPublic';
 import type { UserRegister } from '../models/UserRegister';
-import type { UsersPublic } from '../models/UsersPublic';
 import type { UserUpdate } from '../models/UserUpdate';
-import type { UserUpdateMe } from '../models/UserUpdateMe';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
+
 export class UsersService {
     /**
      * Read Users
      * Retrieve users.
-     * @returns UsersPublic Successful Response
+     * @returns UserPublic[] Successful Response
      * @throws ApiError
      */
-    public static usersReadUsers({
-        skip,
-        limit = 100,
-    }: {
-        skip?: number,
-        limit?: number,
-    }): CancelablePromise<UsersPublic> {
+    public static usersReadUsers(): CancelablePromise<UserPublic[]> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/users/',
-            query: {
-                'skip': skip,
-                'limit': limit,
-            },
+            url: '/users/',
             errors: {
                 422: `Validation Error`,
             },
@@ -52,7 +41,7 @@ export class UsersService {
     }): CancelablePromise<UserPublic> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/users/',
+            url: '/users/',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -69,7 +58,7 @@ export class UsersService {
     public static usersReadUserMe(): CancelablePromise<UserPublic> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/users/me',
+            url: '/users/me',
         });
     }
     /**
@@ -81,7 +70,7 @@ export class UsersService {
     public static usersDeleteUserMe(): CancelablePromise<Message> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/users/me',
+            url: '/users/me',
         });
     }
     /**
@@ -93,11 +82,11 @@ export class UsersService {
     public static usersUpdateUserMe({
         requestBody,
     }: {
-        requestBody: UserUpdateMe,
+        requestBody: UserUpdate,
     }): CancelablePromise<UserPublic> {
         return __request(OpenAPI, {
-            method: 'PATCH',
-            url: '/api/v1/users/me',
+            method: 'PUT',
+            url: '/users/me',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -118,7 +107,7 @@ export class UsersService {
     }): CancelablePromise<Message> {
         return __request(OpenAPI, {
             method: 'PATCH',
-            url: '/api/v1/users/me/password',
+            url: '/users/me/password',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -139,7 +128,7 @@ export class UsersService {
     }): CancelablePromise<UserPublic> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/users/signup',
+            url: '/users/signup',
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -156,11 +145,11 @@ export class UsersService {
     public static usersReadUserById({
         userId,
     }: {
-        userId: string,
+        userId: number,
     }): CancelablePromise<UserPublic> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/users/{user_id}',
+            url: '/users/{user_id}',
             path: {
                 'user_id': userId,
             },
@@ -179,12 +168,12 @@ export class UsersService {
         userId,
         requestBody,
     }: {
-        userId: string,
+        userId: number,
         requestBody: UserUpdate,
     }): CancelablePromise<UserPublic> {
         return __request(OpenAPI, {
-            method: 'PATCH',
-            url: '/api/v1/users/{user_id}',
+            method: 'PUT',
+            url: '/users/{user_id}',
             path: {
                 'user_id': userId,
             },
@@ -198,17 +187,17 @@ export class UsersService {
     /**
      * Delete User
      * Delete a user.
-     * @returns Message Successful Response
+     * @returns UserPublic Successful Response
      * @throws ApiError
      */
     public static usersDeleteUser({
         userId,
     }: {
-        userId: string,
-    }): CancelablePromise<Message> {
+        userId: number,
+    }): CancelablePromise<UserPublic> {
         return __request(OpenAPI, {
             method: 'DELETE',
-            url: '/api/v1/users/{user_id}',
+            url: '/users/{user_id}',
             path: {
                 'user_id': userId,
             },
