@@ -280,9 +280,24 @@
 
 <!-- Create User Modal -->
 {#if state.showCreateModal}
-  <div class="modal-backdrop" onclick={() => state.showCreateModal = false}>
-    <div class="modal" onclick={(e) => e.stopPropagation()}>
-      <h2>Create User</h2>
+  <div 
+    class="modal-backdrop" 
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="create-modal-title"
+    tabindex="-1"
+  >
+    <button
+      class="modal-backdrop-button"
+      onclick={() => state.showCreateModal = false}
+      onkeydown={(e) => e.key === 'Escape' && (state.showCreateModal = false)}
+      aria-label="Close modal"
+    ></button>
+    <div 
+      class="modal" 
+      role="document"
+    >
+      <h2 id="create-modal-title">Create User</h2>
       <form onsubmit={(e) => { e.preventDefault(); handleSubmit(false); }}>
         <div class="form-group">
           <label for="create-email">Email</label>
@@ -342,9 +357,24 @@
 
 <!-- Edit User Modal -->
 {#if state.showEditModal}
-  <div class="modal-backdrop" onclick={() => state.showEditModal = false}>
-    <div class="modal" onclick={(e) => e.stopPropagation()}>
-      <h2>Edit User</h2>
+  <div 
+    class="modal-backdrop" 
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="edit-modal-title"
+    tabindex="-1"
+  >
+    <button
+      class="modal-backdrop-button"
+      onclick={() => state.showEditModal = false}
+      onkeydown={(e) => e.key === 'Escape' && (state.showEditModal = false)}
+      aria-label="Close modal"
+    ></button>
+    <div 
+      class="modal" 
+      role="document"
+    >
+      <h2 id="edit-modal-title">Edit User</h2>
       <form onsubmit={(e) => { e.preventDefault(); handleSubmit(true); }}>
         <div class="form-group">
           <label for="edit-email">Email</label>
@@ -430,6 +460,8 @@
   }
 
   .modal {
+    position: relative;
+    z-index: 1001;
     background-color: var(--input-bg);
     padding: var(--spacing-xl);
     border-radius: var(--border-radius-lg);
@@ -484,5 +516,17 @@
     font-size: 2rem;
     font-weight: 600;
     color: var(--text-color);
+  }
+
+  .modal-backdrop-button {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: none;
+    cursor: pointer;
+    z-index: 1000;
   }
 </style> 
