@@ -161,8 +161,10 @@
   }
 
   h1 {
-    margin: 0 0 2rem;
-    color: var(--primary-color);
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--text-color);
   }
 
   .error-message,

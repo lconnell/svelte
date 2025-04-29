@@ -122,7 +122,7 @@
         </div>
         <div class="stat-content">
           <h3>Users</h3>
-          <p class="stat-value">{state.users.length}</p>
+          <p class="stat-value">1</p>
         </div>
       </div>
 
