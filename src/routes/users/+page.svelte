@@ -9,6 +9,7 @@
   import UserIcon from '~icons/lucide/user';
   import Lock from '~icons/lucide/lock';
   import { goto } from '$app/navigation';
+  import { UsersService } from '$lib/api/services/UsersService';
 
   const state = $state({
     users: [] as User[],
@@ -45,28 +46,7 @@
       }
 
       console.log('Making users request...');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/users/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-
-      console.log('Users response status:', response.status);
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          console.log('Authentication error, redirecting to login');
-          localStorage.removeItem('auth_token'); // Clear invalid token
-          goto('/login');
-          return;
-        }
-        const errorData = await response.json();
-        console.error('Users error response:', errorData);
-        throw new Error(errorData.detail || 'Failed to fetch users');
-      }
-
-      const data = await response.json();
+      const data = await UsersService.usersReadUsers({});
       console.log('Users data received:', data);
       
       // Transform the data to match our User type
@@ -125,37 +105,15 @@
         return;
       }
 
-      const url = isEdit 
-        ? `${import.meta.env.VITE_API_URL}/users/${state.selectedUser?.id}`
-        : `${import.meta.env.VITE_API_URL}/users/`;
-
-      const method = isEdit ? 'PUT' : 'POST';
-
-      // Prepare data for submission
-      let submitData: Record<string, any> = { ...state.formData };
-      
-      // For edit, remove password if empty
-      if (isEdit && !submitData.password) {
-        const { password, ...dataWithoutPassword } = submitData;
-        submitData = dataWithoutPassword;
-      }
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(submitData)
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          goto('/login');
-          return;
-        }
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to save user');
+      if (isEdit && state.selectedUser) {
+        await UsersService.usersUpdateUser({
+          userId: state.selectedUser.id,
+          requestBody: state.formData
+        });
+      } else {
+        await UsersService.usersCreateUser({
+          requestBody: state.formData
+        });
       }
 
       // Close modal and refresh users
@@ -182,22 +140,7 @@
         return;
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          goto('/login');
-          return;
-        }
-        throw new Error('Failed to delete user');
-      }
-
+      await UsersService.usersDeleteUser({ userId });
       state.users = state.users.filter(user => user.id !== userId);
     } catch (err) {
       state.error = err instanceof Error ? err.message : 'An error occurred';

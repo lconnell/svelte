@@ -8,6 +8,7 @@
   import CheckCircle from '~icons/lucide/check-circle';
   import Clock from '~icons/lucide/clock';
   import ArrowRight from '~icons/lucide/arrow-right';
+  import { UsersService } from '$lib/api/services/UsersService';
 
   const state = $state({
     workOrders: [] as WorkOrder[],
@@ -21,27 +22,18 @@
     state.error = '';
 
     try {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
-
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-
-      // For now, we'll just fetch users since work orders endpoint doesn't exist yet
-      const usersResponse = await fetch('http://localhost:8000/api/v1/users/', {
-        headers
-      });
-
-      if (!usersResponse.ok) {
-        if (usersResponse.status === 401) {
-          throw new Error('Session expired. Please login again.');
-        }
-        throw new Error('Failed to fetch dashboard data');
-      }
+      // Use UsersService to fetch users
+      const usersData = await UsersService.usersReadUsers({ limit: 100 });
+      
+      // Transform the users data to match our User type
+      state.users = usersData.data.map((user: any) => ({
+        id: user.id,
+        name: user.full_name || user.email,
+        email: user.email,
+        role: user.role || 'user',
+        createdAt: user.created_at,
+        updatedAt: user.updated_at
+      }));
 
       // Mock work orders data for now
       const mockUser: User = {
@@ -77,8 +69,6 @@
           updatedAt: new Date().toISOString()
         }
       ];
-      
-      state.users = await usersResponse.json();
     } catch (err) {
       state.error = err instanceof Error ? err.message : 'An error occurred';
       console.error('Dashboard data fetch error:', err);

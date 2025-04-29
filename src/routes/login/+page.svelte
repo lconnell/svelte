@@ -2,74 +2,60 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { user } from '$lib/stores/auth';
+  import { ApiService } from '$lib/api/services/ApiService';
   import Mail from '~icons/lucide/mail';
   import Lock from '~icons/lucide/lock';
   import AlertCircle from '~icons/lucide/alert-circle';
 
   let email = $state('');
   let password = $state('');
-  let isLoading = $state(false);
+  let loading = $state(false);
   let error = $state('');
 
   async function handleSubmit() {
-    isLoading = true;
+    loading = true;
     error = '';
 
     try {
-      console.log('Starting login process...');
-      // Create form data for the request
-      const formData = new FormData();
-      formData.append('username', email);
-      formData.append('password', password);
-
-      console.log('Making login request...');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/login/access-token`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Accept': 'application/json'
-        }
+      console.log('Attempting login...');
+      const response = await ApiService.login({
+        username: email,
+        password: password
       });
+      console.log('Login response:', response);
 
-      console.log('Login response status:', response.status);
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Login error response:', errorData);
-        throw new Error(errorData.detail || 'Login failed');
-      }
+      // Store tokens
+      localStorage.setItem('auth_token', response.access_token);
+      localStorage.setItem('refresh_token', response.refresh_token);
+      console.log('Tokens stored in localStorage');
 
-      const data = await response.json();
-      console.log('Login successful, token received');
-      
-      // Store the token
-      localStorage.setItem('auth_token', data.access_token);
-      console.log('Token stored in localStorage');
-      
-      // Fetch user data after successful login
+      // Get user data
       console.log('Fetching user data...');
-      const userResponse = await fetch('http://localhost:8000/api/v1/users/me', {
-        headers: {
-          'Authorization': `Bearer ${data.access_token}`,
-          'Accept': 'application/json'
-        }
-      });
-      
-      console.log('User data response status:', userResponse.status);
-      if (!userResponse.ok) {
-        const errorData = await userResponse.json();
-        console.error('User data error:', errorData);
-        throw new Error('Failed to fetch user data');
-      }
-      
-      const userData = await userResponse.json();
+      const userData = await ApiService.getCurrentUser();
       console.log('User data received:', userData);
-      user.set(userData);
+
+      // Transform user data to match our User type
+      const transformedUser = {
+        id: userData.id,
+        name: userData.full_name || userData.email,
+        email: userData.email,
+        role: userData.role || 'user',
+        createdAt: userData.created_at,
+        updatedAt: userData.updated_at
+      };
+
+      // Update user store
+      user.set(transformedUser);
+      console.log('User store updated');
+
+      // Redirect to dashboard
+      console.log('Redirecting to dashboard...');
       goto('/');
     } catch (err) {
-      error = err instanceof Error ? err.message : 'An error occurred during login';
       console.error('Login error:', err);
+      error = err instanceof Error ? err.message : 'An error occurred during login';
     } finally {
-      isLoading = false;
+      loading = false;
     }
   }
 </script>
@@ -96,7 +82,7 @@
             bind:value={email}
             placeholder="Enter your email"
             required
-            disabled={isLoading}
+            disabled={loading}
           />
         </div>
       </div>
@@ -111,7 +97,7 @@
             bind:value={password}
             placeholder="Enter your password"
             required
-            disabled={isLoading}
+            disabled={loading}
           />
         </div>
       </div>
@@ -119,9 +105,9 @@
       <button
         type="submit"
         class="standard-button"
-        disabled={isLoading}
+        disabled={loading}
       >
-        {#if isLoading}
+        {#if loading}
           <div class="animate-spin">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -129,7 +115,7 @@
             </svg>
           </div>
         {/if}
-        {isLoading ? 'Logging in...' : 'Login'}
+        {loading ? 'Logging in...' : 'Login'}
       </button>
     </form>
   </div>

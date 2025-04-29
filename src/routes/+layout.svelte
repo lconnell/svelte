@@ -1,6 +1,7 @@
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
   import '../app.css';
+  import '$lib/api/config';  // Import API configuration
   import Sidebar from '$lib/components/Sidebar.svelte';
   import { user } from '$lib/stores/auth';
   import { sidebarOpen } from '$lib/stores/sidebar';
