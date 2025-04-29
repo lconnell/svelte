@@ -4,25 +4,22 @@
   import { user } from '$lib/stores/auth';
   import Mail from '~icons/lucide/mail';
   import Lock from '~icons/lucide/lock';
-  import Loader from '~icons/lucide/loader';
   import AlertCircle from '~icons/lucide/alert-circle';
 
-  const state = $state({
-    email: '',
-    password: '',
-    isLoading: false,
-    error: ''
-  });
+  let email = $state('');
+  let password = $state('');
+  let isLoading = $state(false);
+  let error = $state('');
 
   async function handleSubmit() {
-    state.isLoading = true;
-    state.error = '';
+    isLoading = true;
+    error = '';
 
     try {
       // Create form data for the request
       const formData = new FormData();
-      formData.append('username', state.email);
-      formData.append('password', state.password);
+      formData.append('username', email);
+      formData.append('password', password);
 
       const response = await fetch('http://localhost:8000/api/v1/login/access-token', {
         method: 'POST',
@@ -52,65 +49,70 @@
       user.set(userData);
       goto('/');
     } catch (err) {
-      state.error = err instanceof Error ? err.message : 'An error occurred during login';
+      error = err instanceof Error ? err.message : 'An error occurred during login';
       console.error('Login error:', err);
     } finally {
-      state.isLoading = false;
+      isLoading = false;
     }
   }
 </script>
 
 <div class="login-container">
-  <div class="login-card">
+  <div class="card">
     <h1>Login</h1>
 
-    {#if state.error}
+    {#if error}
       <div class="error-message">
         <AlertCircle />
-        <p>{state.error}</p>
+        <p>{error}</p>
       </div>
     {/if}
 
     <form onsubmit={handleSubmit}>
-      <div class="input-group">
+      <div class="form-group">
         <label for="email">Email</label>
         <div class="input-wrapper">
           <Mail />
           <input
             type="email"
             id="email"
-            bind:value={state.email}
+            bind:value={email}
             placeholder="Enter your email"
             required
-            disabled={state.isLoading}
+            disabled={isLoading}
           />
         </div>
       </div>
 
-      <div class="input-group">
+      <div class="form-group">
         <label for="password">Password</label>
         <div class="input-wrapper">
           <Lock />
           <input
             type="password"
             id="password"
-            bind:value={state.password}
+            bind:value={password}
             placeholder="Enter your password"
             required
-            disabled={state.isLoading}
+            disabled={isLoading}
           />
         </div>
       </div>
 
-      <button type="submit" disabled={state.isLoading}>
-        {#if state.isLoading}
+      <button
+        type="submit"
+        class="standard-button"
+        disabled={isLoading}
+      >
+        {#if isLoading}
           <div class="animate-spin">
-            <Loader />
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
           </div>
-          <span>Logging in...</span>
-        {:else}
-          <span>Login</span>
         {/if}
+        {isLoading ? 'Logging in...' : 'Login'}
       </button>
     </form>
   </div>
@@ -126,12 +128,7 @@
     background-color: #f3f4f6;
   }
 
-  .login-card {
-    background: white;
-    padding: 2rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    width: 100%;
+  .card {
     max-width: 400px;
   }
 
@@ -160,7 +157,7 @@
     flex-shrink: 0;
   }
 
-  .input-group {
+  .form-group {
     margin-bottom: 1rem;
   }
 
@@ -207,31 +204,7 @@
     cursor: not-allowed;
   }
 
-  button {
-    width: 100%;
-    padding: 0.75rem;
-    background-color: #3498db;
-    color: white;
-    border: none;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    transition: background-color 0.15s ease-in-out;
-  }
-
-  button:hover:not(:disabled) {
-    background-color: #2980b9;
-  }
-
-  button:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
+  /* Button styles moved to global CSS */
 
   .animate-spin {
     animation: spin 1s linear infinite;

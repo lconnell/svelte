@@ -5,26 +5,24 @@
   import Mail from '~icons/lucide/mail';
   import Lock from '~icons/lucide/lock';
 
-  const state = $state({
-    name: $user?.name || '',
-    email: $user?.email || '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-    isLoading: false,
-    error: '',
-    success: ''
-  });
+  let name = $state($user?.name || '');
+  let email = $state($user?.email || '');
+  let currentPassword = $state('');
+  let newPassword = $state('');
+  let confirmPassword = $state('');
+  let isLoading = $state(false);
+  let error = $state('');
+  let success = $state('');
 
   async function handleSubmit() {
-    state.isLoading = true;
-    state.error = '';
-    state.success = '';
+    isLoading = true;
+    error = '';
+    success = '';
 
     // Validate passwords match
-    if (state.newPassword && state.newPassword !== state.confirmPassword) {
-      state.error = 'New passwords do not match';
-      state.isLoading = false;
+    if (newPassword && newPassword !== confirmPassword) {
+      error = 'New passwords do not match';
+      isLoading = false;
       return;
     }
 
@@ -35,10 +33,10 @@
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          name: state.name,
-          email: state.email,
-          currentPassword: state.currentPassword || undefined,
-          newPassword: state.newPassword || undefined
+          name,
+          email,
+          currentPassword: currentPassword || undefined,
+          newPassword: newPassword || undefined
         })
       });
 
@@ -49,16 +47,16 @@
 
       const updatedUser = await response.json();
       user.set(updatedUser);
-      state.success = 'Profile updated successfully';
+      success = 'Profile updated successfully';
       
       // Clear password fields
-      state.currentPassword = '';
-      state.newPassword = '';
-      state.confirmPassword = '';
+      currentPassword = '';
+      newPassword = '';
+      confirmPassword = '';
     } catch (err) {
-      state.error = err instanceof Error ? err.message : 'An error occurred';
+      error = err instanceof Error ? err.message : 'An error occurred';
     } finally {
-      state.isLoading = false;
+      isLoading = false;
     }
   }
 </script>
@@ -66,15 +64,15 @@
 <div class="settings-page">
   <h1>Account Settings</h1>
 
-  {#if state.error}
+  {#if error}
     <div class="error-message">
-      {state.error}
+      {error}
     </div>
   {/if}
 
-  {#if state.success}
+  {#if success}
     <div class="success-message">
-      {state.success}
+      {success}
     </div>
   {/if}
 
@@ -87,7 +85,7 @@
         <input
           type="text"
           placeholder="Name"
-          bind:value={state.name}
+          bind:value={name}
           required
         />
       </div>
@@ -97,7 +95,7 @@
         <input
           type="email"
           placeholder="Email"
-          bind:value={state.email}
+          bind:value={email}
           required
         />
       </div>
@@ -114,7 +112,7 @@
         <input
           type="password"
           placeholder="Current Password"
-          bind:value={state.currentPassword}
+          bind:value={currentPassword}
         />
       </div>
 
@@ -123,7 +121,7 @@
         <input
           type="password"
           placeholder="New Password"
-          bind:value={state.newPassword}
+          bind:value={newPassword}
         />
       </div>
 
@@ -132,13 +130,25 @@
         <input
           type="password"
           placeholder="Confirm New Password"
-          bind:value={state.confirmPassword}
+          bind:value={confirmPassword}
         />
       </div>
     </div>
 
-    <button type="submit" disabled={state.isLoading}>
-      {state.isLoading ? 'Saving...' : 'Save Changes'}
+    <button
+      type="submit"
+      class="standard-button"
+      disabled={isLoading}
+    >
+      {#if isLoading}
+        <div class="animate-spin">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+      {/if}
+      {isLoading ? 'Saving...' : 'Save Changes'}
     </button>
   </form>
 </div>
@@ -220,26 +230,5 @@
   input:focus {
     outline: none;
     border-color: var(--primary-color);
-  }
-
-  button {
-    width: 100%;
-    padding: 0.75rem;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 0.25rem;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  button:hover:not(:disabled) {
-    background-color: var(--primary-dark);
-  }
-
-  button:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
   }
 </style> 

@@ -123,49 +123,51 @@
   });
 </script>
 
-<div class="users-page">
-  <div class="header">
+<div class="page-container">
+  <div class="page-header">
     <h1>Users</h1>
-    <button class="create-button" onclick={openCreateModal}>
+    <button class="standard-button compact" onclick={openCreateModal}>
       <Plus />
       <span>Add User</span>
     </button>
   </div>
 
   <div class="search-bar">
-    <Search />
-    <input
-      type="text"
-      placeholder="Search users..."
-      bind:value={state.searchQuery}
-    />
+    <div class="input-wrapper">
+      <Search />
+      <input
+        type="text"
+        placeholder="Search users..."
+        bind:value={state.searchQuery}
+      />
+    </div>
   </div>
 
   {#if state.isLoading}
-    <div class="loading">Loading users...</div>
+    <div class="status-message">Loading users...</div>
   {:else if state.error}
-    <div class="error">{state.error}</div>
+    <div class="status-message error">{state.error}</div>
   {:else if state.filteredUsers.length === 0}
-    <div class="empty-state">No users found</div>
+    <div class="status-message">No users found</div>
   {:else}
-    <div class="users-grid">
+    <div class="grid auto-fill">
       {#each state.filteredUsers as user (user.id)}
-        <div class="user-card">
+        <div class="card compact">
           <div class="user-info">
             <h3>{user.name}</h3>
             <p>{user.email}</p>
-            <span class="role-badge">{user.role}</span>
+            <span class="badge">{user.role}</span>
           </div>
           <div class="actions">
             <button
-              class="edit-button"
+              class="standard-button icon-only"
               onclick={() => openEditModal(user)}
               title="Edit user"
             >
               <Edit />
             </button>
             <button
-              class="delete-button"
+              class="standard-button icon-only danger"
               onclick={() => handleDelete(user.id)}
               title="Delete user"
             >
@@ -179,87 +181,6 @@
 </div>
 
 <style>
-  .users-page {
-    padding: 2rem;
-  }
-
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-  }
-
-  h1 {
-    margin: 0;
-    color: var(--primary-color);
-  }
-
-  .create-button {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  .create-button:hover {
-    background-color: var(--primary-dark);
-  }
-
-  .search-bar {
-    position: relative;
-    margin-bottom: 2rem;
-  }
-
-  .search-bar :global(svg) {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--secondary-color);
-  }
-
-  .search-bar input {
-    width: 100%;
-    padding: 0.75rem 1rem 0.75rem 3rem;
-    border: 1px solid var(--border-color);
-    border-radius: 0.25rem;
-    font-size: 1rem;
-  }
-
-  .loading,
-  .error,
-  .empty-state {
-    text-align: center;
-    padding: 2rem;
-    color: var(--secondary-color);
-  }
-
-  .error {
-    color: var(--error-text);
-  }
-
-  .users-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-  }
-
-  .user-card {
-    background: white;
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    display: flex;
-    justify-content: space-between;
-  }
-
   .user-info h3 {
     margin: 0 0 0.5rem;
     color: var(--text-color);
@@ -267,52 +188,47 @@
 
   .user-info p {
     margin: 0 0 0.75rem;
-    color: var(--secondary-color);
-  }
-
-  .role-badge {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    background-color: var(--primary-light);
-    color: var(--primary-color);
-    border-radius: 1rem;
-    font-size: 0.75rem;
-    font-weight: 500;
+    color: var(--text-color-light);
   }
 
   .actions {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--spacing-sm);
   }
 
-  .edit-button,
-  .delete-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    border: none;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
+  /* Ensure search bar styles are applied */
+  :global(.search-bar) {
+    position: relative;
+    margin-bottom: 2rem;
   }
 
-  .edit-button {
-    background-color: var(--warning-bg);
-    color: var(--warning-text);
+  :global(.search-bar .input-wrapper) {
+    position: relative;
   }
 
-  .delete-button {
-    background-color: var(--error-bg);
-    color: var(--error-text);
+  :global(.search-bar .input-wrapper svg) {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    color: #9ca3af;
+    pointer-events: none;
   }
 
-  .edit-button:hover {
-    background-color: var(--warning-dark);
+  :global(.search-bar input) {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 3rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: border-color 0.15s ease-in-out;
   }
 
-  .delete-button:hover {
-    background-color: var(--error-dark);
+  :global(.search-bar input:focus) {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
   }
 </style> 

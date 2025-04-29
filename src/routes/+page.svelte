@@ -44,9 +44,38 @@
       }
 
       // Mock work orders data for now
+      const mockUser: User = {
+        id: '1',
+        email: 'system@example.com',
+        name: 'System',
+        role: 'admin',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
       state.workOrders = [
-        { id: 1, title: 'Sample Work Order 1', status: 'open', created_at: new Date().toISOString() },
-        { id: 2, title: 'Sample Work Order 2', status: 'completed', created_at: new Date().toISOString() }
+        { 
+          id: '1', 
+          title: 'Sample Work Order 1', 
+          description: 'This is a sample work order',
+          status: 'open',
+          priority: 'medium',
+          assignedTo: mockUser,
+          createdBy: mockUser,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        { 
+          id: '2', 
+          title: 'Sample Work Order 2', 
+          description: 'This is another sample work order',
+          status: 'completed',
+          priority: 'high',
+          assignedTo: mockUser,
+          createdBy: mockUser,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
       ];
       
       state.users = await usersResponse.json();
@@ -202,6 +231,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 1.5rem;
+    margin-bottom: 2.5rem;
   }
 
   .stat-card {
