@@ -23,7 +23,7 @@
       formData.append('password', password);
 
       console.log('Making login request...');
-      const response = await fetch('http://localhost:8000/api/v1/login/access-token', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/login/access-token`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -41,16 +41,15 @@
       const data = await response.json();
       console.log('Login successful, token received');
       
-      // Store the token with the correct type
-      const token = `${data.token_type || 'bearer'} ${data.access_token}`;
-      localStorage.setItem('auth_token', token);
+      // Store the token
+      localStorage.setItem('auth_token', data.access_token);
       console.log('Token stored in localStorage');
       
       // Fetch user data after successful login
       console.log('Fetching user data...');
       const userResponse = await fetch('http://localhost:8000/api/v1/users/me', {
         headers: {
-          'Authorization': token,
+          'Authorization': `Bearer ${data.access_token}`,
           'Accept': 'application/json'
         }
       });

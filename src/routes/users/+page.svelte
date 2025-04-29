@@ -45,7 +45,7 @@
       }
 
       console.log('Making users request...');
-      const response = await fetch('http://localhost:8000/api/v1/users/', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/users/`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -55,8 +55,8 @@
 
       console.log('Users response status:', response.status);
       if (!response.ok) {
-        if (response.status === 401) {
-          console.log('Unauthorized, redirecting to login');
+        if (response.status === 401 || response.status === 403) {
+          console.log('Authentication error, redirecting to login');
           localStorage.removeItem('auth_token'); // Clear invalid token
           goto('/login');
           return;
@@ -126,8 +126,8 @@
       }
 
       const url = isEdit 
-        ? `http://localhost:8000/api/v1/users/${state.selectedUser?.id}`
-        : 'http://localhost:8000/api/v1/users/';
+        ? `${import.meta.env.VITE_API_URL}/users/${state.selectedUser?.id}`
+        : `${import.meta.env.VITE_API_URL}/users/`;
 
       const method = isEdit ? 'PUT' : 'POST';
 
@@ -182,7 +182,7 @@
         return;
       }
 
-      const response = await fetch(`http://localhost:8000/api/v1/users/${userId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
