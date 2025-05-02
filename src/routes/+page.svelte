@@ -9,6 +9,8 @@
   import Clock from '~icons/lucide/clock';
   import ArrowRight from '~icons/lucide/arrow-right';
   import { UsersService } from '$lib/api/services/UsersService';
+  import type { UserPublic } from '$lib/api/models/UserPublic';
+  import type { UsersPublic } from '$lib/api/models/UsersPublic';
 
   const state = $state({
     workOrders: [] as WorkOrder[],
@@ -17,23 +19,50 @@
     error: ''
   });
 
+  // Function to transform API user to our User type
+  function transformUser(apiUser: UserPublic): User {
+    return {
+      id: apiUser.id,
+      email: apiUser.email,
+      name: apiUser.full_name || apiUser.email,
+      role: apiUser.is_superuser ? 'admin' : 'user',
+      createdAt: apiUser.created_at,
+      updatedAt: apiUser.created_at // Using created_at as updated_at since it's not available in UserPublic
+    };
+  }
+
   async function fetchDashboardData() {
     state.isLoading = true;
     state.error = '';
 
     try {
       // Use UsersService to fetch users
-      const usersData = await UsersService.usersReadUsers({ limit: 100 });
+      const usersData = await UsersService.usersReadUsers();
+      
+      // Debug log to understand the response structure
+      console.log('API Response:', {
+        type: typeof usersData,
+        isArray: Array.isArray(usersData),
+        value: usersData
+      });
+
+      // Handle different response formats
+      let users: UserPublic[];
+      if (Array.isArray(usersData)) {
+        users = usersData;
+      } else if (usersData && typeof usersData === 'object') {
+        const response = usersData as UsersPublic;
+        if (Array.isArray(response.data)) {
+          users = response.data;
+        } else {
+          throw new Error('Response data is not an array');
+        }
+      } else {
+        throw new Error(`Unexpected API response format: ${JSON.stringify(usersData)}`);
+      }
       
       // Transform the users data to match our User type
-      state.users = usersData.data.map((user: any) => ({
-        id: user.id,
-        name: user.full_name || user.email,
-        email: user.email,
-        role: user.role || 'user',
-        createdAt: user.created_at,
-        updatedAt: user.updated_at
-      }));
+      state.users = users.map(transformUser);
 
       // Mock work orders data for now
       const mockUser: User = {

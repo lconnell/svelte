@@ -8,6 +8,7 @@ import type { UserCreate } from '../models/UserCreate';
 import type { UserPublic } from '../models/UserPublic';
 import type { UserRegister } from '../models/UserRegister';
 import type { UserUpdate } from '../models/UserUpdate';
+import type { UsersPublic } from '../models/UsersPublic';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -26,7 +27,13 @@ export class UsersService {
             errors: {
                 422: `Validation Error`,
             },
-        });
+        }).then((response: unknown) => {
+            const usersResponse = response as UsersPublic;
+            if (usersResponse && Array.isArray(usersResponse.data)) {
+                return usersResponse.data;
+            }
+            throw new Error('Invalid response format from users API');
+        }) as CancelablePromise<UserPublic[]>;
     }
     /**
      * Create User

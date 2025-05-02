@@ -30,47 +30,56 @@
     }
   });
 
+  // Function to transform API user to our User type
+  function transformUser(apiUser: UserPublic): User {
+    return {
+      id: apiUser.id,
+      email: apiUser.email,
+      name: apiUser.full_name || apiUser.email,
+      role: apiUser.is_superuser ? 'admin' : 'user',
+      createdAt: apiUser.created_at,
+      updatedAt: apiUser.created_at // Using created_at as updated_at since it's not available in UserPublic
+    };
+  }
+
   async function fetchUsers() {
     state.isLoading = true;
     state.error = '';
 
     try {
-      // The API should return an array of UserPublic objects
-      const response = await UsersService.usersReadUsers();
+      const usersData = await UsersService.usersReadUsers();
       
-      // Debug the response
-      console.log('Users API response:', response);
-      
-      // Handle different response formats
-      let usersData: UserPublic[] = [];
-      
-      if (Array.isArray(response)) {
-        // Direct array response
-        usersData = response;
-      } else if (response && typeof response === 'object') {
-        // Check if response has a data property that is an array
-        if ('data' in response && Array.isArray(response.data)) {
-          usersData = response.data;
+      // More detailed debug logging
+      console.log('API Response:', {
+        type: typeof usersData,
+        isArray: Array.isArray(usersData),
+        value: usersData,
+        keys: usersData ? Object.keys(usersData) : [],
+        prototype: Object.getPrototypeOf(usersData)
+      });
+
+      // Handle the response based on its structure
+      let users: UserPublic[];
+      if (Array.isArray(usersData)) {
+        users = usersData;
+      } else if (usersData && typeof usersData === 'object') {
+        // Check if it has a data property that's an array
+        const response = usersData as { data?: UserPublic[] };
+        if (response.data && Array.isArray(response.data)) {
+          users = response.data;
         } else {
-          // If we can't find an array, log the structure for debugging
-          console.error('Unexpected API response structure:', response);
-          state.error = 'Unexpected API response format';
-          return;
+          throw new Error(`Unexpected API response format: ${JSON.stringify(usersData)}`);
         }
+      } else {
+        throw new Error(`Unexpected API response type: ${typeof usersData}`);
       }
-      
+
       // Transform the users data to match our User type
-      state.users = usersData.map((user: UserPublic) => ({
-        id: user.id,
-        name: user.full_name || user.email || 'Unknown User',
-        email: user.email || '',
-        role: user.is_superuser ? 'admin' : 'user',
-        createdAt: user.created_at,
-        updatedAt: user.created_at // Using created_at as updated_at since it's not available
-      }));
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      state.error = error instanceof Error ? error.message : 'An unknown error occurred';
+      state.users = users.map(transformUser);
+      state.filteredUsers = state.users;
+    } catch (err) {
+      state.error = err instanceof Error ? err.message : 'An error occurred';
+      console.error('Error fetching users:', err);
     } finally {
       state.isLoading = false;
     }
